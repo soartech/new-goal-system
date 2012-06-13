@@ -1,0 +1,203 @@
+#
+# Copyright (c) 2010, Soar Technology, Inc.
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# 
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# 
+# * Neither the name of Soar Technology, Inc. nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without the specific prior written permission of Soar Technology, Inc.
+# 
+# THIS SOFTWARE IS PROVIDED BY SOAR TECHNOLOGY, INC. AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL SOAR TECHNOLOGY, INC. OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+##!
+# @file
+# @brief This file contains an NGS testing agent that solves the waterjugs problem.
+
+waitsnc --on
+
+pushd .. 
+source NewGoalSystem.tcl
+popd
+
+echo "Sourcing NGS Water Jugs Agent.\n"
+echo "If the test is successful, you will see this string:\n*************** Test successful. ***************\n"
+
+## INITIALIZATION
+
+sp "ngs*waterjugs*init*new-goal*solve-waterjug
+   -(<s> ^solved-waterjug *true*)
+    [NGS_match-goalpool <goals>]
+    -->
+	[NGS_create-goal <goals> solve-waterjug]
+"
+
+sp "ngs*waterjug*propose-operator*initialize-waterjug
+    [NGS_match-active-goal solve-waterjug <g>]
+    (<g> ^tags <tags>)
+    (<tags> -^initialized <any-val>)
+    -->
+	[NGS_create-operator initialize-waterjug <g> <o>]
+"
+
+sp "ngs*water-jug*apply*initialize-waterjug
+  	[NGS_match-operator initialize-waterjug <o>]
+	(<o> ^goal.tags <g-tags>)
+    -->
+    (<g-tags> ^jug <j1> + ^jug <j2> +)
+    (<j1> ^volume 3 + ^contents 0 +)
+    (<j2> ^volume 5 + ^contents 0 +)
+    (<g-tags> ^initialized *yes* +)
+"
+
+## Empty Elaboration (how much space is left in the jug?)
+
+sp "ngs*water-jug*elaborate*empty
+	[NGS_match-active-goal solve-waterjug <g>]
+    (<g> ^tags.jug <j>)
+    (<j> ^volume <v> ^contents <c>)
+    -->
+    (<j> ^empty (- <v> <c>) +)
+"
+
+## POUR operator (transfer water from one jug to the other)
+
+sp "ngs*waterjug*propose-operator*pour
+    [NGS_match-active-goal solve-waterjug <g>]
+    (<g> ^tags <tags>)
+    (<tags> ^jug <j> ^jug { <> <j> <i> })
+    (<j> ^empty { > 0 <e*1> })
+    (<i> ^contents { > 0 <c*1> })
+    -->
+	[NGS_create-operator pour <g> <o>]
+    (<o> ^empty-jug <i>
+         ^fill-jug <j>)
+"
+
+sp "ngs*water-jug*apply*pour*empty-source
+    [NGS_match-operator pour <o>]
+    (<o> ^fill-jug <j> ^empty-jug <i>)
+    (<j> ^empty <jempty> ^volume <jvol> ^contents <jcon>)
+    (<i> ^volume <ivol> ^contents { > <jempty> <icon> })
+    -->
+    (<i> ^contents (- <icon> <jempty>) + ^contents <icon> -)
+    (<j> ^contents <jvol> + ^contents <jcon> -)
+"
+
+sp "ngs*water-jug*apply*pour*not-empty-source
+    [NGS_match-operator pour <o>]
+    (<o> ^fill-jug <j> ^empty-jug <i>)
+    (<j> ^empty <jempty> ^volume <jvol> ^contents <jcon>)
+    (<i> ^volume <ivol> ^contents { <= <jempty> <icon> })
+    -->
+    (<i> ^contents 0 + ^contents <icon> -)
+    (<j> ^contents (+ <jcon> <icon>) + ^contents <jcon> -)
+"
+
+## FILL Operator (Fill a jug to the brim from the well)
+
+sp "ngs*waterjug*propose-operator*fill
+    [NGS_match-active-goal solve-waterjug <g>]
+    (<g> ^tags.jug <j>)
+    (<j> ^empty { > 0 <e*1> })
+    -->
+    [NGS_create-operator fill <g> <o>]
+    (<o> ^fill-jug <j>)
+"
+
+sp "ngs*water-jug*apply*fill
+	[NGS_match-operator fill <o>]   
+	(<o> ^fill-jug <j>)
+    (<j> ^volume <volume> ^contents <contents>)
+    -->
+    (<j> ^contents <volume> + ^contents <contents> -)
+"
+
+## Goal achievement & termination
+
+sp "ngs*water-jug*detect*goal*achieved
+:o-support
+	[NGS_match-active-goal solve-waterjug <g>]
+   -(<s> ^operator)
+    (<g> ^tags <g-tags>)
+    (<g-tags> ^jug <j>)
+    (<j> ^volume 3 ^contents 1)
+    -->
+	[NGS_mark-achieved <g-tags>]
+    (<s> ^solved-waterjug *true*)
+    (write (crlf) |The problem has been solved.|)
+    (write (crlf) |*************** Test successful. ***************|)
+    (interrupt)
+"
+
+## EMPTY operator (pour all of a jug's contents into the well)
+
+sp "ngs*waterjug*propose-operator*empty
+    [NGS_match-active-goal solve-waterjug <g>]
+	(<g> ^tags.jug <j>)
+    (<j> ^contents { > 0 <c*1> })
+    -->
+	[NGS_create-operator empty <g> <o>]
+    (<o> ^empty-jug <j>)
+"
+
+sp "ngs*water-jug*apply*empty
+  	[NGS_match-operator empty <o>]
+    (<o> ^empty-jug <j>)
+    (<j> ^volume <volume> ^contents <contents>)
+    -->
+    (<j> ^contents 0 + ^contents <contents> -)
+"
+
+## MONITORING AND DEBUG PRINTING APPLICATIONS
+
+sp "ngs*water-jug*monitor*match-operator*pour
+	[NGS_match-operator pour <o>]
+    (<o> ^fill-jug <fj> ^empty-jug <ej>)
+    (<ej> ^volume <ejvol> ^contents <ejcon>)
+    (<fj> ^volume <fjvol> ^contents <fjcon>)
+    -->
+    (write (crlf) |  POUR(| <fjvol> |:| <fjcon> |,| <ejvol> |:| <ejcon> |)|)
+"
+
+sp "ngs*water-jug*monitor*match-operator*fill
+	[NGS_match-operator fill <o>]
+	(<o> ^fill-jug.volume <volume>)
+    -->
+    (write (crlf) |  FILL(| <volume> |)|)
+"
+
+sp "ngs*water-jug*monitor*match-operator*empty
+    [NGS_match-operator empty <o>]
+	(<o> ^empty-jug.volume <volume>)
+    -->
+    (write (crlf) |  EMPTY(| <volume> |)|)
+"
+
+sp "ngs*water-jug*monitor*state
+	[NGS_match-active-goal solve-waterjug <g>]
+	(<g> ^tags <tags>)
+	(<tags> ^jug <i> ^jug <j>)
+    (<i> ^volume 3 ^contents <icon>)
+    (<j> ^volume 5 ^contents <jcon>)
+    -->
+    (write (crlf) | 5:| <jcon> | 3:| <icon>)
+"

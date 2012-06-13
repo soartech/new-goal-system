@@ -1,0 +1,18 @@
+##!
+# NGS version file
+# This file contains the current version # of the NGS system, as well 
+# as any pertinent change logs.
+
+-----------------------------------------------------------------------------------------------
+# Current version: NGS version 3.0 (still under development)
+
+** TODO - Develop more examples using NGS
+
+-----------------------------------------------------------------------------------------------
+
+# NGS version 3.0 notes:
+
+# Reduction to "NGS Lite" -- simplified to include just the minimal set of useful functionality
+# Updated documentation
+# Open Sourced and released to Google Code
+

@@ -1,0 +1,258 @@
+#
+# Copyright (c) 2010, Soar Technology, Inc.
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# 
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# 
+# * Neither the name of Soar Technology, Inc. nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without the specific prior written permission of Soar Technology, Inc.
+# 
+# THIS SOFTWARE IS PROVIDED BY SOAR TECHNOLOGY, INC. AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL SOAR TECHNOLOGY, INC. OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+##!
+# @file
+#
+# @brief create meta-{goal/transform} structures, and manage {goals/transforms}
+#  
+# @project NGS v2
+# 
+# @kernel 8.3 Primary development
+#
+# @created glenn 20040909
+#
+# @problem-space NGS
+#
+# @desc
+#   Items are created as 'desired', where they reside until terminated.
+#   They may be linked to 'active' when they're ready to become active.
+#   They may be removed from 'desired' and/or 'active' to 'terminated' when they're 
+#     no longer relevant.
+#   
+#   Only reasoning designed to alter the activation of an item should test items in the desired pools.
+#   Only reasoning about history (episodic reasoning / reoccurrance) should test the terminated pools,
+#     and keep in mind that there's a very large cost associated with looking at a long history.
+#   Everything else should only test the active pools.
+#
+#   The original implementation of this (in both STGS and NGS) had a common place where goals were stored,
+#   and they were copied-by-reference into subpools depending on their statistics.  This was causing
+#   performance hits (since we had to check against all goals and all historical goals), and so 
+#   we now have the terminated pool, which should serve the purpose of an archive without
+#   slowing work that doesn't need history and is thus solely based upon the current (active and desired) goals.
+
+##!
+# @production
+# @brief Create areas to store our goals in - three areas: active, desired, and terminated.
+
+sp "ngs*top-state*elaborate*goals
+   (state <s> ^superstate nil)
+-->
+   (<s> ^goals <gs>)
+   (<gs> ^active <active>
+         ^desired <desired>
+         ^terminated <terminated>)
+"
+
+################################################
+## SUB/SUPER RELATIONSHIP ELABORATIONS
+################################################
+
+##!
+# @brief If a goal has a parent-goal, automatically
+#        mark that goal as a subgoal of the parent-goal
+
+sp "ngs*top-state*elaborate*subgoal
+   (state <s> ^$any_goal <goal>)
+   (<goal> ^parent-goal <sg>)
+-->
+   (<sg> ^subgoal <goal>)
+"
+
+##!
+# @brief If a goal has a subgoal, automatically
+#        mark that goal as a parent-goal of the subgoal
+# 
+# @devnote This is a possible duplication of functionality - I believe
+#          that this is already done whenever we create a subgoal.
+#          We may want to investigate, and if that's the case, remove this production entirely.
+#          SAL 1/11/2008
+
+sp "ngs*top-state*elaborate*parent-goal
+   (state <s> ^$any_goal <goal>)
+   (<goal> ^subgoal <sg>)
+-->
+   (<sg> ^parent-goal <goal>)
+"
+
+########################################################
+## CONSIDERABLE POOL MANAGEMENT
+########################################################
+
+####### ALL OF THE BELOW CHANGES START FROM CONSIDERABLES IN THE "DESIRED" POOL
+
+##!
+# @brief when a desired goal becomes active (^tags.active *yes*),
+# then reference it in the active pool.
+#
+# @devnote Intentionally I-supported
+# @devnote Intentionally leave the considerable in the desired pool.
+
+sp "ngs*desired_item*desired-to-active
+   (state <s> ^$desired_considerables <cons>
+              ^$active_considerables <active>)
+   (<cons> ^$considerable_item_type <con>)
+   (<con> ^tags <tags>)
+   [NGS_is-tagged <con> active *yes*]
+   [NGS_is-not-tagged <con> achieved *yes*]
+   [NGS_is-not-tagged <con> unachievable *yes*]
+  ;# It is not the case that a considerable with a pre-action has not handled them
+ -{ (<con> ^actions.preaction <an-action>)
+    [NGS_is-not-tagged <con> pre-actions-handled *yes*]
+  } 
+-->
+   (<active> ^<ngs_considerable_type> <con>)
+"
+
+##!
+# @brief when a desired goal becomes unachievable,
+# then move it to the termintaed pool.
+#
+# @devnote Even maintenance goals, when unachievable, get moved to 
+#          the terminated pool.
+
+sp "ngs*desired_item*desired-to-terminated*unachievable
+:o-support
+   (state <s> ^$desired_considerables <cons>
+              ^$terminated_considerables <uncons>)
+   (<cons> ^$considerable_item_type <con>)
+   (<con> ^tags <tags>)        
+   [NGS_is-tagged <con> unachievable *yes*]
+-->
+   (<cons> ^<ngs_considerable_type> <con> -)
+   (<uncons> ^<ngs_considerable_type> <con>)
+"
+
+##!
+# @brief When a desired goal becomes achieved,
+#        then move it to the terminated pool.
+#
+# @devnote Ignore maintenance goals - they remain desired or active
+#          even when achieved, and can be both active and achieved!
+
+sp "ngs*desired_item*desired-to-terminated*achieved
+:o-support
+   (state <s> ^$desired_considerables <cons>
+              ^$terminated_considerables <uncons>)
+   (<cons> ^$considerable_item_type <con>)
+   (<con> ^tags <tags>)
+   - [NGS_is-type <con> maintenance-goal]
+   [NGS_is-tagged <con> achieved *yes*]
+  ;# It is not the case that a considerable with an execution-action has not handled them 
+ -{ (<con> ^actions.execution-action <an-action>)
+    [NGS_is-not-tagged <con> execution-actions-handled *yes*]
+  } 
+-->
+   (<cons> ^<ngs_considerable_type> <con> -)
+   (<uncons> ^<ngs_considerable_type> <con>)
+"
+
+##!
+# @brief Remove the 'active' tag upon achievement 
+#
+# @devnote Ignore maintenance goals - they remain desired or active
+#          even when achieved, and can be both active and achieved!
+sp "ngs*desired_item*tag-maintenance*achieved
+:o-support
+    (state <s> ^$desired_considerable <con>)
+    (<con> ^tags <tags>)
+    - [NGS_is-type <con> maintenance-goal]
+    [NGS_is-tagged <con> achieved *yes*]
+  ;# It is not the case that a considerable with an execution-action has not handled them 
+ -{ (<con> ^actions.execution-action <an-action>)
+    [NGS_is-not-tagged <con> execution-actions-handled *yes*]
+  } 
+-->
+	[NGS_unmark-active <tags>]
+"
+
+##!
+# @brief Remove the 'active' tag upon unachievable
+sp "ngs*desired_item*tag-maintenance*unachievable
+:o-support
+    (state <s> ^$desired_considerable <con>)
+    (<con> ^tags <tags>)
+    [NGS_is-tagged <con> unachievable *yes*]
+-->
+	[NGS_unmark-active <tags>]
+"
+
+########################################################
+## SUBGOAL MANAGEMENT
+########################################################
+
+##!
+# @brief Mark subgoals of inactive goals also inactive.
+
+sp "ngs*goal*copy-status-to-subgoal*inactive
+:o-support
+   (state <s> ^$desired_goal <sg>)
+   [NGS_is-parent-goal <sg> <g>]
+   [NGS_is-not-active <g>]
+   [NGS_is-not-achieved <sg>]
+   (<sg> ^tags <sg-tags>)
+   (<g>  ^tags <g-tags>)
+-->
+   [NGS_unmark-active <sg-tags>]
+"
+
+##!
+# @brief Mark subgoals of unachievable goals also unachievable.
+
+sp "ngs*goal*copy-status-to-subgoal*unachievable
+:o-support
+   (state <s> ^$desired_goal <sg>)
+   [NGS_is-parent-goal <sg> <g>]
+   [NGS_is-unachievable <g>]
+   [NGS_is-not-achieved <sg>]
+   (<sg> ^tags <sg-tags>)
+   (<g>  ^tags <g-tags>)
+-->
+   [NGS_mark-unachievable <sg-tags>]
+   [NGS_tag <sg-tags> unachievable-because-of <g>]
+"
+
+##!
+# @brief Mark subgoals of achieved goals as unachievable
+#
+# @devnote: is *unachievable* the right marking for these?
+
+sp "ngs*goal*copy-status-to-subgoal*achieved
+:o-support
+   (state <s> ^$desired_goal <sg>)
+   [NGS_is-parent-goal <sg> <g>]
+   [NGS_is-achieved <g>]
+   [NGS_is-not-achieved <sg>]
+   (<sg> ^tags <sg-tags>)
+   (<g>  ^tags <g-tags>)
+-->
+   [NGS_mark-unachievable <sg-tags>]
+   [NGS_tag <sg-tags> unachievable-because-of <g>]
+"

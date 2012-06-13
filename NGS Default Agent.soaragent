@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soaragent sourceCommandChangesDirectory="false">
+  <startfile path="NewGoalSystem.tcl" />
+  <members>
+    <member path="infrastructure" />
+    <member path="infrastructure/templates" />
+    <member path="infrastructure/management" />
+    <member path="infrastructure/debug" />
+    <member path="NewGoalSystem.tcl" />
+    <member path="default_settings.tcl" />
+    <member path="standard-variables.tcl" />
+    <member path="settings.tcl" />
+    <member path="top-level-source.soar" />
+    <member path="variables.tcl" />
+  </members>
+</soaragent>
+

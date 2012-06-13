@@ -1,0 +1,115 @@
+#
+# Copyright (c) 2010, Soar Technology, Inc.
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# 
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# 
+# * Neither the name of Soar Technology, Inc. nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without the specific prior written permission of Soar Technology, Inc.
+# 
+# THIS SOFTWARE IS PROVIDED BY SOAR TECHNOLOGY, INC. AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL SOAR TECHNOLOGY, INC. OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+##!
+# @file
+#
+# @brief Create and manage conditions.
+#  
+# @project NGS2
+# 
+# @kernel 8.3 Primary development
+#
+# @created lisse 20051014
+#
+# @problem-space NGS
+#
+# @desc 
+# Conditions are used to automatically manage activation, deactivation, and removal from consideration
+# of goals and transforms.  They may be thought of as left-hand-side fragments with known right-hand sides
+# that affect the consideration process.  A considerable item may have any number of conditions.
+#
+# WME structures:
+#   Conditions exist in a ^conditions wme underneath each "considerable item".
+#   Each condition has a '^type' and a ^met flag.
+#   Conditions may also (depending upon their type) have a ^parameters area.
+# ex:
+#   ^goal
+#     ^conditions
+#       ^pre 
+#         ^met *no*
+#         ^type later-than
+#         ^parameters
+#           ^target-time XX
+#           ^time-source YY
+#       ^pre <B>
+#       ^satisfaction <C>
+#       ^abort <D>
+#
+# O-support vs. I-support:
+#   The existence of conditions may be o-supported or i-supported.
+#   Their achievement is _always_ i-supported.
+#   The flags created by their matching (i.e. achieved, unachievable, active) are _always_ o-supported.
+#       
+# Categories of conditions:
+# * Precondition ("pre")
+#     This role of condition controls the transition from desired to active.
+#     All exisiting preconditions must be met (^met *yes*) in order for a goal to become active.
+# * Invariant ("invariant")
+#     This role of condition behaves identically to precondition, with the added behavior that if 
+#     any invariant on an active goal becomes no longer achieved, that goal will transition _back_ to desired.
+# * Satisfaction ("satisfaction"
+#     This role of condition controls the "transition" from active to achieved.
+#     All satisfaction conditions must be met in order for a goal to become achieved.
+#     (The transition from active to terminated follows automatically from achievement for transforms and achievement goals)
+# * Abort ("abort")
+#     This role of condition controls the "transition" from active to unachievable.
+#     _ANY_ abort condition being met will trigger this transition.
+#
+# Interaction with "considerable-management.soar":
+#   There is some functional interaction between this file and "considerable-management.soar".  "Considerable-management" is 
+#   designed to move considerables from one pool to another based upon which tags are set on the considerable.
+#   This file is designed as one way to set and clear the tags.
+
+######################################################################################
+# Productions to set tags on considerables
+######################################################################################
+
+##!
+# @brief Transition a considerable with no preconditions or invariants to active by default
+#
+# @devnote  The o-support and negated active check is necessary in order for goals that have been
+# suppressed to return.
+# @devnote (GT) removing :o-support for consistent transition from desired->active; seems
+#   to work fine with suspended goals.
+	    
+sp "ngs*default-activation
+:o-support
+    (state <s> ^$desired_considerable <con>)
+   (<con> ^conditions <conds>
+          ^tags <tags>)
+   - (<conds> ^<< pre invariant >>)
+  ;# It is not the case that a considerable with a pre-action has not handled them
+  -{ (<con> ^actions.preaction <an-action>)
+     [NGS_is-not-tagged <con> pre-actions-handled *yes*]
+   } 
+--> 
+   [NGS_mark-active <tags>]  
+"

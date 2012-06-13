@@ -1,0 +1,107 @@
+#######################################
+## Debug printing toggle commands
+#######################################
+NGS_debug-print-operators { { state "on" } }
+NGS_debug-print-active-goals { { state "on" } }
+NGS_debug-print-achieved-goals { { state "on" } }
+NGS_debug-print-unachievable-goals { { state "on" } }
+NGS_debug-print-messages-sent { { state "on" } }
+NGS_toggle-debug-printing { toggle }
+
+#######################################
+## infrastructure/templates/standard-manipulators.tcl
+#######################################
+
+# Goal creation
+NGS_create-goal {goal_pool goal_type_list {goal_bind ""} {tags_bind ""} }
+NGS_create-subgoal {goal_pool goal_type_list super_bind {goal_bind ""} {tags_bind ""} }
+
+# Goal relationship manipulation
+NGS_add-subgoal { super_bind sub_bind }
+
+# Generic object creation
+NGS_create-object { owner_object attribute object_type_list object_bind {tags_bind ""} } 
+NGS_create-goal { goal_category goal_pool goal_type_list {goal_bind ""} {tags_bind ""} {conditions_bind ""} } 
+
+# Operator manipulation
+NGS_create-operator { operator_type_list goal_id {operator_bind "<o>"} {operator_pref_list "+ ="} {state "<s>"} }
+NGS_prefer-operator-x-over-y { op1name op2name {op1test ""} {op2test ""}}
+
+# Alterations of goals
+NGS_tag {tags_bind tag_name tag_value}
+NGS_mark-active { tags_bind } 
+NGS_unmark-active { tags_bind } 
+NGS_mark-suspended { tags_bind } 
+NGS_unmark-suspended { tags_bind } 
+NGS_mark-achieved { tags_bind } 
+NGS_unmark-achieved { tags_bind } 
+NGS_mark-unachievable { tags_bind } 
+NGS_unmark-unachievable { tags_bind } 
+
+# Soar control flow alteration
+NGS_interrupt-in { prodname }
+
+#######################################
+## infrastructure/templates/lhs-fragments.tcl
+#######################################
+
+# Object tests 
+NGS_is-type { object_id type_name }
+NGS_is-not-type { object_id type_name }
+NGS_is-most-derived-type { object_id type_name }
+NGS_is-not-most-derived-type { object_id type_name }
+NGS_is-named { object_id name }
+NGS_is-tagged { object_id tag_name {tag_val "" } }
+NGS_is-not-tagged { object_id tag_name {tag_val "" } }
+
+# Goal tests
+NGS_is-active { goal_bind }
+NGS_is-not-active { goal_bind } 
+NGS_is-suspended { goal_bind } 
+NGS_is-not-suspended { goal_bind } 
+NGS_is-achieved { goal_bind } 
+NGS_is-not-achieved { goal_bind }
+NGS_is-unachievable { goal_bind }
+NGS_is-not-unachievable { goal_bind }
+
+# Goal-specific tests
+
+## Find a goal
+NGS_match-desired-goal { goal_type {goal_bind ""} {state_bind <s>} }
+NGS_match-active-goal { goal_type {goal_bind ""} {state_bind <s>} }
+NGS_match-terminated-goal { goal_type {goal_bind ""} {state_bind <s>} }
+NGS_match-subgoal { pgoal_bind subgoal_name { subgoal_bind ""} }
+
+## Test goal relationships
+NGS_is-parent-goal { goal supergoal {supergoal_type ""} }
+NGS_is-subgoal { goal subgoal {subgoal_type ""} }
+
+## Test that there's no such goal
+NGS_no-active-goal { goal_type {goal_list ""} {state_bind <s>} }
+
+## Prepare for doing something to a goal (create, modify)
+NGS_match-goalpool { goal_list {state_bind <s>} }
+
+# Operator-specific tests
+NGS_match-proposed-operator { operator1_name {op1_bind <op1>} {state_bind <s>}}
+NGS_match-operator {operator_name {operator_bind ""} {goal_bind ""} {goal_tags_bind ""} {state_bind "<s>"} }
+NGS_match-operator-for-create-goal {goal_list operator_name {operator_bind ""} {goal_bind ""} {goal_tags_bind ""} {state_bind "<s>"} }
+NGS_match-two-proposed-operators { operator1_name operator2_name {op1_bind ""} {op2_bind ""} {state_bind <s>}}
+NGS_match-two-operators-with-goals { op_bind1 op_bind2 {op_name1 ""} {op_name2 ""} {op_goal1 ""} {op_goal2 ""} {state_bind "<s>"} }
+
+#######################################
+## infrastructure/templates/template-helpers.tcl
+#######################################
+NGS_gen-soar-varname { { base "variable" } }
+
+#######################################
+## utilities/enhanced-load.tcl
+#######################################
+
+NGS_ifdef { var_name code }
+NGS_ifndef { var_name code }
+NGS_ifeq {var_name code }
+NGS_ifneq {var_name code }
+NGS_load-soar-dir { directory }
+NGS_reference-soar-vars
+NGS_create-soar-var {var_name var_value}
