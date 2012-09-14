@@ -166,7 +166,12 @@ proc NGS_load-soar-dir { directory } {
 ## Use this to move to a particular directory and then load the "settings.tcl" file there.
 ## (Many settings.tcl files depend on the interpreter being in their home directory when they're loaded.)
 proc NGS_load-settings { directory } {
-  NGS_echo-pushd $directory
+  # if the directory to load from is the current directory, don't push/pop it -- jsoar doesn't like "." in the path when loading resources from a jar
+  if { [string compare $directory "."] != 0 } {
+    NGS_echo-pushd $directory
+  }
   NGS_echo-source "settings.tcl"
-  popd
+  if { [string compare $directory "."] != 0 } {
+    popd
+  }
 }
