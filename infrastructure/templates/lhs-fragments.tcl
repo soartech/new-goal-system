@@ -334,9 +334,8 @@ proc NGS_match-proposed-operator { operator1_name
   # Default value initialization
   if {$op1_bind == ""} {set op1_bind [NGS_gen-soar-varname "operator-1"]}
 
-   return "(state $state_bind ^operator $op1_bind + $op2_bind +)
-           ($op1_bind ^name $operator1_name)
-           ($op2_bind ^name $operator2_name)"
+   return "(state $state_bind ^operator $op1_bind +)
+           ($op1_bind ^name $operator1_name)"
 }
 
 # Return the bindings for two proposed-but-not-necessarily-selected operators
