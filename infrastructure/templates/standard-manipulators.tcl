@@ -88,8 +88,6 @@ proc NGS_create-considerable { considerable_category
 proc NGS_create-goal {goal_pool goal_type_list 
 					 {goal_bind ""} 
 				  	 {tags_bind ""} } {
-
-  NGS_reference-soar-vars
   
   # Default value initialization
   if {$goal_bind == ""} {set goal_bind [NGS_gen-soar-varname "new-goal"]}
@@ -109,8 +107,6 @@ proc NGS_create-goal {goal_pool goal_type_list
 proc NGS_create-subgoal {goal_pool goal_type_list super_bind
 					    {goal_bind ""} 
 				     	{tags_bind ""} } {
-
-  NGS_reference-soar-vars
   
   # Default value initialization
   if {$goal_bind == ""} {set goal_bind [NGS_gen-soar-varname "new-goal"]}
@@ -140,8 +136,6 @@ proc NGS_create-operator { operator_type_list goal_id
                          {operator_bind "<o>"} 
                          {operator_pref_list "+ ="} 
                          {state "<s>"} } {
-
-  NGS_reference-soar-vars
   
   set most_derived_operator_type [lindex $operator_type_list [expr [llength $operator_type_list] - 1]]
   
@@ -158,8 +152,6 @@ proc NGS_create-operator { operator_type_list goal_id
 # (with optional additional tests on the operators)
 #
 #  e.g., NGS_prefer-operator-x-over-y <opname1> <opname2>
-#
-# @devnote no NGS_reference-soar-vars here -- but could be added later if needed.
 
 proc NGS_prefer-operator-x-over-y { op1name op2name 
                                   {op1test ""} 

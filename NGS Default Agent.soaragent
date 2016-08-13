@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<soaragent sourceCommandChangesDirectory="false">
+<soaragent>
   <startfile path="NewGoalSystem.tcl" />
   <members>
     <member path="infrastructure" />
     <member path="infrastructure/templates" />
     <member path="infrastructure/management" />
-    <member path="infrastructure/debug/debug-goals.tcl" />
-    <member path="infrastructure/debug/debug-output.tcl" />
-    <member path="infrastructure/debug/debug-printing.soar" />
-    <member path="infrastructure/debug/load.soar" />
     <member path="NGS-enhanced-load.tcl" />
     <member path="NewGoalSystem.tcl" />
     <member path="default_settings.tcl" />
     <member path="scripts.tcl" />
     <member path="settings.tcl" />
     <member path="standard-variables.tcl" />
+    <member path="infrastructure/debug/debug-goals.tcl" />
+    <member path="infrastructure/debug/debug-output.tcl" />
+    <member path="infrastructure/debug/debug-printing.soar" />
+    <member path="infrastructure/debug/load.soar" />
   </members>
 </soaragent>
 

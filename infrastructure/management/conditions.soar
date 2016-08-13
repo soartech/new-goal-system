@@ -92,6 +92,8 @@
 # Productions to set tags on considerables
 ######################################################################################
 
+variable desired_considerable
+
 ##!
 # @brief Transition a considerable with no preconditions or invariants to active by default
 #

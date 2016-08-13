@@ -36,7 +36,6 @@
 # @devnote usage:  NGS_debug-print-operators on
 
 proc NGS_debug-print-operators { { state "on" } } {
-   NGS_reference-soar-vars
    
    # to workaround csoar being unhappy when you excise something that doesn't exist, we'll make sure it exists
    sp "ngs_print*operator
@@ -55,7 +54,7 @@ proc NGS_debug-print-operators { { state "on" } } {
 # @type debugging 
 #
 proc NGS_debug-print-active-considerables { { state "on" } } {
-   NGS_reference-soar-vars
+   variable active_considerables
 
    # to workaround csoar being unhappy when you excise something that doesn't exist, we'll make sure it exists
    sp "ngs*print*active*considerable*no-name
@@ -89,7 +88,7 @@ proc NGS_debug-print-active-considerables { { state "on" } } {
 # @type debugging
 
 proc NGS_debug-print-achieved-considerables { { state "on" } } {
-   NGS_reference-soar-vars
+   variable terminated_considerables
 
    # to workaround csoar being unhappy when you excise something that doesn't exist, we'll make sure it exists
    sp "ngs*print*achieved*considerable*no-name
@@ -124,7 +123,7 @@ proc NGS_debug-print-achieved-considerables { { state "on" } } {
 # @type debugging
 
 proc NGS_debug-print-unachievable-considerables { { state "on" } } {
-   NGS_reference-soar-vars
+   variable terminated_considerables
    
    # to workaround csoar being unhappy when you excise something that doesn't exist, we'll make sure it exists
    sp "ngs*print*unachievable*considerable*no-name
@@ -154,7 +153,8 @@ proc NGS_debug-print-unachievable-considerables { { state "on" } } {
 }
 
 proc NGS_debug-print-timed-out-considerables { { state "on" } } {
-   NGS_reference-soar-vars
+   variable terminated_considerables
+   variable master_time
 
    # to workaround csoar being unhappy when you excise something that doesn't exist, we'll make sure it exists
    sp "ngs*print-terminated-considerable*remove-on-timeout

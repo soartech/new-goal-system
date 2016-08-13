@@ -58,6 +58,14 @@
 #   we now have the terminated pool, which should serve the purpose of an archive without
 #   slowing work that doesn't need history and is thus solely based upon the current (active and desired) goals.
 
+variable any_goal
+variable desired_considerables
+variable desired_considerable
+variable active_considerables
+variable terminated_considerables
+variable considerable_item_type
+variable desired_goal
+
 ##!
 # @production
 # @brief Create areas to store our goals in - three areas: active, desired, and terminated.

@@ -129,7 +129,6 @@ proc NGS_create-soar-var { variable_name variable_value } {
 # It will print out the usual "Loading files for,..." message
 #
 proc NGS_echo-pushd { directory } {
-  NGS_reference-soar-vars
   
   NGS_ifndef NGS_NO_DEBUG_PRINTING "echo \"\n Loading files for [pwd]/$directory \n\""
   
@@ -142,7 +141,6 @@ proc NGS_echo-pushd { directory } {
 # It will print out the usual " ... Loading file, ..." message
 #
 proc NGS_echo-source { file } {
-  NGS_reference-soar-vars
   
   NGS_ifndef NGS_NO_DEBUG_PRINTING "echo \"\n ... Loading file: [pwd]/$file \n \""
   
@@ -156,7 +154,6 @@ proc NGS_echo-source { file } {
 # popd
 #
 proc NGS_load-soar-dir { directory } {
-   NGS_reference-soar-vars
    
    NGS_echo-pushd $directory
     source "load.soar" 

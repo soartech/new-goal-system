@@ -190,7 +190,7 @@ proc NGS_is-subgoal { goal subgoal {subgoal_type ""} } {
 #         [NGS_create-achievement-goal <goal-list> ... ]
 #
 proc NGS_match-goalpool { goal_list {state_bind <s>} } {
-  NGS_reference-soar-vars
+  variable desired_goals
   return "(state $state_bind ^superstate nil
                              ^$desired_goals $goal_list)"
 }
@@ -225,7 +225,7 @@ proc NGS_match-subgoal { pgoal_bind subgoal_name { subgoal_bind ""} } {
 proc NGS_match-active-goal { goal_type 
                                {goal_bind ""} 
                                {state_bind <s>} } {
-  NGS_reference-soar-vars
+  variable active_goal
 
   # Default value initialization
   if {$goal_bind == ""} {set goal_bind [NGS_gen-soar-varname "bound-goal"]}
@@ -251,7 +251,7 @@ proc NGS_match-active-goal { goal_type
 proc NGS_match-desired-goal { goal_type 
                                 {goal_bind ""} 
                                 {state_bind <s>} } {
-  NGS_reference-soar-vars
+  variable desired_goal
 
   # Default value initialization
   if {$goal_bind == ""} {set goal_bind [NGS_gen-soar-varname "bound-goal"]}
@@ -275,7 +275,7 @@ proc NGS_match-desired-goal { goal_type
 proc NGS_match-terminated-goal { goal_type 
                                    {goal_bind ""} 
                                    {state_bind <s>} } {
-  NGS_reference-soar-vars
+  variable terminated_goal
 
   # Default value initialization
   if {$goal_bind == ""} {set goal_bind [NGS_gen-soar-varname "bound-goal"]}
@@ -299,7 +299,7 @@ proc NGS_match-terminated-goal { goal_type
 
 proc NGS_no-active-goal { goal_type  
                           {state_bind <s>} } {
-   NGS_reference-soar-vars
+   variable active_goal
 
   return "(state $state_bind -^$active_goal.type-info.most-derived-type $goal_type)"
 }
@@ -433,7 +433,7 @@ proc NGS_match-operator-for-create-goal {goal_list operator_name
                                              {goal_bind ""} 
                                              {goal_tags_bind ""} 
                                              {state_bind "<s>"} } {
-  NGS_reference-soar-vars
+  variable desired_goals
 
   # Default value initialization
   if {$operator_bind == ""} {set operator_bind [NGS_gen-soar-varname "operator"]}
